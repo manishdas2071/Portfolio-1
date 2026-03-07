@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <!-- <link rel="stylesheet" href="bootstrap.min.css"> -->
+    <title>Manjit Kumar Das - Portfolio</title>
+    <style>
+        *{
+            margin:0;
+            padding: 0;
+        }
+
+        .main{
+            display: flex;
+            justify-content: flex-start;
+            flex-direction: column;
+            height: 95vh;
+        }
+        body{
+            background-color:rgb(188, 213, 235);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            justify-content: space-between;
+        }
+        h1{
+            /* margin-left: 10px; */
+            text-align: center;
+            font-size: 50px; 
+            color:rgb(0,0,97);
+        }
+        h3{
+            /* margin-left: 10px; */
+            text-align: center;
+            font-size: 30px;
+            font-family: clash glotesh;
+            color: rgb(94, 101, 106);
+        }
+        img{
+            border-radius: 50%; 
+            border: 3px solid ;
+            border-color: rgb(48, 66, 100);
+            display: flex;
+            margin: auto;
+        }
+        .abt{
+            margin-left: 10px;
+        }
+        .abt > h2{
+            font-size: 30px;
+        }
+        .abt > p{
+            font-size: 20px;
+            text-align: justify;
+            margin-right: 10px;
+        }
+        /* .edu{
+            margin-left: 10px;
+        } */
+        .edu > ul{
+            margin-left: 20px;
+            font-size: 20px;
+        }
+        .p_d > ul{
+            list-style-type: none;
+        }
+        .container{
+            display: grid;
+            margin: 10px;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        a{
+            text-decoration: none; 
+            color: inherit;
+        }
+
+
+        /*forms*/
+        .contact{
+            margin: 15px 10px;
+        }
+        .contact > h2{
+            text-align: start;
+        }
+        .contact form{
+            margin: auto;
+            display:flex;
+            flex-direction:column;
+            max-width:500px;
+        }
+
+        .contact input,
+        .contact textarea{
+            margin:8px 0;
+            padding:10px;
+            border-radius:6px;
+            border:1px solid #ccc;
+            font-size:14px;
+        }
+        .contact button{
+            margin-top:10px;
+            padding:10px;
+            background-color:rgb(0,0,97);
+            color:white;
+            border:none;
+            border-radius:6px;
+            cursor:pointer;
+        }
+
+        .contact button:hover{
+            background-color:rgb(20,20,150);
+        }
+
+        /* Skills */
+        .skills{
+            list-style: none;
+        }
+
+        .skills > ul{
+            display: flex;
+            width: 400px;
+            flex-wrap: wrap;
+            gap: 0 30px;
+        }
+        .skills li{
+            margin:6px 0;
+            font-size:20px;
+        }
+
+        .skills i{
+            margin-right:8px;
+            color:rgb(0,0,97);
+        }
+
+        /*Projects*/
+        .third > h2{
+            margin-left: 15px;
+        }
+        .projects{
+            margin: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-evenly;
+            gap: 20px;
+        }
+        .project-card{
+            max-width:500px;
+            border:1px solid #ccc;
+            border-radius:10px;
+            padding:15px;
+            background:white;
+        }
+        .project-card img{
+            width:100%;
+            border-radius:8px;
+        }
+        .project-card h3{
+            margin-top:10px;
+        }
+        .project-card p{
+            margin:10px 0;
+        }
+        .demo-btn{
+            display:inline-block;
+            padding:8px 14px;
+            background-color:rgb(0,0,97);
+            color:white;
+            border-radius:6px;
+        }
+        .demo-btn:hover{
+            background-color:rgb(20,20,150);
+        }
+
+        footer{
+            /* margin-top: ; */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding-bottom: 10px;
+        }
+        footer > #ft1{
+            align-content: baseline;
+            font-size: 20px;
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            align-items: center;
+            margin: auto;
+        }
+        footer > i{
+            margin: 0 5px;
+            font-size: 20px;
+        }
+        footer > a{
+            margin: 0 5px;
+            font-size: inherit;
+        }
+        .fa-instagram:hover{
+            color:#f542e6;
+        }
+        .fa-facebook:hover{
+            color:#1877F2;
+        }
+
+        .fa-github:hover{
+            color:#1877F2;
+        }
+        .fa-linkedin:hover{
+            color:#0A66C2;
+        }
+        .fa-x-twitter:hover{
+            color:#0A66C2;
+        }
+        .fa-threads:hover{
+            color:#4077c0;
+        }
+        .fa-envelope:hover{
+            color:#004b87;
+        }
+
+
+        @media (max-width: 600px){
+            #Name{
+                text-align: center;
+            }
+            #desig{
+                text-align: center;
+            }
+            .container{
+                display: flex;
+                justify-content: center;
+                flex-direction: column;
+                margin-right: 10px;
+            }
+            .abt > h2{
+                text-align: center;
+            }
+            img{
+                display: flex;
+                margin: auto;
+            }
+            .edu > ul{
+                padding: 1px;
+                margin-left: 0px;
+                display: grid;
+                list-style-type: none;
+            }
+            .p_d > ul{
+                padding: 1px;
+                margin-left: 0px;
+                display: grid;
+                list-style-type: none;
+            }
+            .edu{
+                margin-left: 00px;
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <div style="margin: 0 20px;">
+        <h1 >Manjit Kumar Das</h1>
+        <h3 >Student</h3>
+        <img src="images/Portfolio_image.jpg" alt="Portfolio_image" width=200px>
+        <div class="abt">
+            <h2> About Me</h2>
+            <p>Hi, I'm Manjit. I'm a second-year B.Tech student with a deep passion for computer science and software development. I am constantly exploring new technologies and expanding my skill set, from building custom Python applications to developing accessible web platforms. As an aspiring software engineer, I thrive on tackling complex problems and turning them into clean, efficient code. I'm currently seeking opportunities to apply my foundational knowledge to real-world challenges and continue growing as a developer.</p>
+        </div>
+
+        <div class="container">
+            <div class="g_grid">
+                <div class="edu">
+                    <h2> Education </h2>
+                    <ul>
+                        <li> B.Tech -- <a href="https://dec.ac.in/" target="_blank">Dhemaji Engineering College</a> -- 2024-28</li>
+                        <li> H.S -- <a href="http://www.sigmapoint.in/" target="_blank">Sigma Point Integrated Academy</a> -- 2024</li>
+                        <li> H.S.L.C -- <a href="https://www.google.com/maps/place/St.Xavier's+High+School/@26.2496703,91.6962648,93m/data=!3m1!1e3!4m14!1m7!3m6!1s0x375a5040ab743d05:0x323a78342c9c4b08!2sSt.Xavier's+High+School!8m2!3d26.2494003!4d91.6963775!16s%2Fg%2F11btyxystl!3m5!1s0x375a5040ab743d05:0x323a78342c9c4b08!8m2!3d26.2494003!4d91.6963775!16s%2Fg%2F11btyxystl?authuser=0&entry=ttu&g_ep=EgoyMDI2MDIyNS4wIKXMDSoASAFQAw%3D%3D" target="_blank">St. Xavier's High School</a> -- 2022</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="g_grid">
+                <div class="skills">
+                <h2>Skills</h2>
+                <ul class="skills">
+                    <li><i class="fa-brands fa-python"></i> Python</li>
+                    <li><i class="fa-solid fa-code"></i> C++</li>
+                    <li><i class="fa-brands fa-html5"></i> HTML</li>
+                    <li><i class="fa-brands fa-css3-alt"></i> CSS</li>
+                    <li><i class="fa-solid fa-database"></i> Data Structures</li>
+                </ul>
+            </div>
+            </div>
+        </div>
+        <div class="third">
+            <!-- <div class="p_d">
+                <h2> Personal Details </h2>
+                <ul>
+                    <li> <Address> Dorakahara, Kamrup, Assam (781101)</Address> </li>
+                    <li> Phone: 9101169478</li>
+                    <li> Email: <a href="mailto:manjit6kumar@gmail.com">manjit6kumar@gmail.com</a></li>
+                </ul>
+            </div> -->
+            
+
+            <h2>Projects</h2>
+            <div class="projects">
+                <div class="project-card">
+                    <img src="images/qr.png" alt="QR_Image" >
+                    <h3>QR code Generator</h3>
+                    <p>
+                        A QR code generator that let's convert any text or link to QR
+                    </p>
+                    <a href="https://manishdas2071.github.io/Generate-QR-code/" target="_blank" class="demo-btn">Live Demo</a>
+                </div>
+
+                <div class="project-card">
+                    <img src="images/Flip_clock.png" alt="Flip_clock_Image">
+                    <h3>Flip Clock</h3>
+                    <p>
+                        Flip clock that shows real time in HH:MM:SS format
+                    </p>
+                    <a href="https://manishdas2071.github.io/Flip-clock/" target="_blank" class="demo-btn">Live Demo</a>
+                </div>
+
+                
+            </div>
+        </div>
+
+        <div class="contact">
+            <form action="https://formspree.io/f/xreybedd" method="POST">
+                <h2>Contact Me</h2>
+                <input type="text" name="name" placeholder="Your Name" required>
+                <input type="email" name="email" placeholder="Your Email" required>
+                <textarea name="message" rows="5" placeholder="Your Message" required style="resize: none;"></textarea>
+                <button type="submit">Send Message</button>
+            </form>
+        </div>
+    </div>
+
+
+    <footer>
+        <div id="ft1">
+            <a href="https://www.instagram.com/manishdas2071/" target="_blank"><i class="fa-brands fa-instagram"></i></a>
+            <a href="https://www.facebook.com/profile.php?id=100054083915333&rdid=WpMBRZuTBI0FkMp8&share_url=https%3A%2F%2Fwww.facebook.com%2Fshare%2F1C9jf8MPEP%2F#" target="_blank"><i class="fa-brands fa-facebook"></i></a>
+            <a href="https://github.com/manishdas2071" target="_blank"><i class="fa-brands fa-github"></i></a>
+            <a href="https://www.linkedin.com/in/manjit-das-491b03216/" target="_blank"><i class="fab fa-linkedin"></i></a>
+            <a href="https://x.com/Manishdas2071" target="_blank"><i class="fab fa-x-twitter"></i></a>
+            <a href="https://www.threads.com/@manishdas2071" target="_blank"><i class="fa-brands fa-threads"></i></a>
+            <a href="https://mail.google.com/mail/?view=cm&fs=1&to=manjit6kumar@gmail.com" target="_blank"><i class="fas fa-envelope"></i></a>
+        </div>
+        <div id="ft2">
+            <hr class="my-4 opacity-25">
+            <p class="small text-secondary mb-0">&copy; 2026 Manjit Kumar Das. All rights reserved.</p>
+        </div>
+    </footer>
+    <!-- <script href="bootstrap.bundle.js"></script> -->
+</body>
+</html>
