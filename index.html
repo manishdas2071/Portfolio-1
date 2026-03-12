@@ -19,6 +19,7 @@
             height: 95vh;
         }
         body{
+            user-select: none;
             background-color:rgb(195, 220, 231);
             display: flex;
             flex-direction: column;
@@ -129,6 +130,11 @@
             border-radius:20px;
             font-size:14px;
         }
+        .skills li:hover{
+            transform: scale(1.1);
+            transition-duration: 0.5s ;
+            box-shadow: 0 0 10px black;
+        }
 
         .skills i{
             margin-right:8px;
@@ -172,6 +178,9 @@
             border-radius:6px;
         }
         .demo-btn:hover{
+            transform: scale(1.05);
+            transition-duration: 0.5s;
+            box-shadow: 0 5px 10px black;
             background-color:rgb(20,20,150);
         }
 
@@ -267,8 +276,8 @@
 </head>
 <body>
     <div style="margin: 0 20px;">
-        <h1 >Manjit Kumar Das</h1>
-        <h3 >Student</h3>
+        <h1>Manjit Kumar Das</h1>
+        <h3>Student</h3>
         <img src="images/Portfolio_image2.jpg" alt="Portfolio_image" width=200px>
         <div class="abt">
             <h2> About Me</h2>
