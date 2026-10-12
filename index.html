@@ -75,7 +75,7 @@
             align-items: center;
             padding: 20px 5%;
             z-index: 1000;
-            background: linear-gradient(to bottom, rgba(10, 10, 10, 1), rgba(10, 10, 10, 0));
+            background: rgba(10, 10, 10, 0.7);
             /* box-shadow: 0 0 10px rgba(245, 245, 245, 0.658); */
         }
 
@@ -114,12 +114,15 @@
         /* Social Sidebar */
         .social-sidebar {
             position: fixed;
-            left: 30px;
-            bottom: 50px;
+            left: 0;
+            bottom: 0;
             display: flex;
             flex-direction: column;
             gap: 20px;
             z-index: 1000;
+            padding: 16px 14px;
+            border-radius: 0 24px 0 0;
+            background: rgb(18, 18, 18);
         }
 
         .social-sidebar a {
@@ -175,6 +178,21 @@
 
         .home-content .title-sub {
             text-align: right;
+        }
+
+        /* TechText (React Bits) - canvas overlay; the real text stays for layout/accessibility */
+        .tech-text {
+            position: relative;
+            color: transparent;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: pan-y;
+        }
+
+        .tech-text-canvas {
+            position: absolute;
+            display: block;
+            pointer-events: none;
         }
 
         /* About Section & Education */
@@ -777,7 +795,8 @@
                 position: fixed;
                 left: 0;
                 bottom: 0;
-                background: rgba(10, 10, 10, 0.441);
+                border-radius: 0;
+                background: rgba(10, 10, 10, 0.7);
             }
 
             .form-group input,
@@ -803,10 +822,89 @@
             }
 
         }
+
+        /* TextType (typing effect) */
+        .text-type {
+            min-height: 1.3em;
+            white-space: pre-wrap;
+        }
+
+        .text-type__cursor {
+            display: inline-block;
+            margin-left: 0.25rem;
+            animation: text-type-blink 0.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes text-type-blink {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .text-type__cursor { animation: none; }
+        }
+
+        /* Hexagonal Vault background (cursor-lit hex grid) */
+        #hex-vault {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        main {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* TargetCursor (React Bits) - vanilla port */
+        .target-cursor {
+            position: fixed;
+            inset: 0;
+            z-index: 2147483647;
+            pointer-events: none;
+        }
+
+        .target-cursor__corner {
+            position: absolute;
+            top: 0;
+            left: 0;
+            box-sizing: border-box;
+            border-style: solid;
+            border-color: var(--target-cursor-color, #ffffff);
+            transform-origin: 0 0;
+            will-change: transform;
+        }
+
+        .target-cursor__dot {
+            position: absolute;
+            top: 0;
+            left: 0;
+            border-radius: 50%;
+            background: var(--target-cursor-color, #ffffff);
+            will-change: transform;
+        }
+
+        .target-cursor__label {
+            position: absolute;
+            top: 0;
+            left: 0;
+            color: var(--target-cursor-color, #ffffff);
+            font-family: 'Courier Prime', monospace;
+            font-size: 12px;
+            font-weight: 500;
+            line-height: 1;
+            white-space: nowrap;
+            opacity: 0;
+            will-change: transform, opacity;
+        }
     </style>
 </head>
 
 <body>
+    <canvas id="hex-vault" aria-hidden="true"></canvas>
 
     <nav>
         <div class="logo"><a href="#home">Manish.</a></div>
@@ -848,7 +946,7 @@
                 </div>
                 <div class="about-text">
                     <h2>Hi, I'm Manjit Kumar Das</h2>
-                    <span class="engineer-blue">An Engineer</span>
+                    <span class="engineer-blue text-type" id="role-type" aria-label="An Engineer, A Singer, A Photographer, A Videographer, An Artist"><span class="text-type__content" aria-hidden="true">An Engineer</span><span class="text-type__cursor" aria-hidden="true">|</span></span>
                     <p class="bio-para">
                         I'm a B.Tech student at Dhemaji Engineering College with a deep passion for computer science and software development.
                         I thrive on tackling complex problems and turning them into clean, efficient code.
@@ -1331,6 +1429,945 @@
         //     const isOpen = navUl.classList.contains('show-menu');
         //     menuIcon.textContent = isOpen ? 'close' : 'menu';
         // });
+        // TextType: typing effect for the role line in About
+        (function () {
+            const root = document.getElementById('role-type');
+            if (!root) return;
+            const content = root.querySelector('.text-type__content');
+            const texts = ['An Engineer', 'A Singer', 'A Photographer', 'A Videographer', 'An Artist'];
+            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+            const TYPING = 70, DELETING = 40, PAUSE = 1800, INITIAL = 400;
+            let ti = 0, ci = 0, deleting = false, timer;
+
+            function step() {
+                const current = texts[ti];
+                if (!deleting) {
+                    ci++;
+                    content.textContent = current.slice(0, ci);
+                    if (ci === current.length) {
+                        deleting = true;
+                        timer = setTimeout(step, PAUSE);
+                        return;
+                    }
+                    timer = setTimeout(step, TYPING);
+                } else {
+                    ci--;
+                    content.textContent = current.slice(0, ci);
+                    if (ci === 0) {
+                        deleting = false;
+                        ti = (ti + 1) % texts.length;
+                        timer = setTimeout(step, 300);
+                        return;
+                    }
+                    timer = setTimeout(step, DELETING);
+                }
+            }
+
+            // start once the About section is visible
+            const io = new IntersectionObserver(entries => {
+                if (entries[0].isIntersecting) {
+                    io.disconnect();
+                    content.textContent = '';
+                    timer = setTimeout(step, INITIAL);
+                }
+            }, { threshold: 0.2, root: document.querySelector('main') });
+            io.observe(root);
+        })();
+
+        // Hexagonal Vault: hex grid lit by a soft light that follows the cursor
+        (function () {
+            const canvas = document.getElementById('hex-vault');
+            const ctx = canvas.getContext('2d');
+            const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+            const SIZE = 34;            // hex radius in px
+            const LIGHT_RADIUS = 360;   // reach of the cursor light
+            const BASE_ALPHA = 0.05;    // unlit line opacity
+            const LIT_RGB = '74,144,226'; // matches --accent-blue
+            const EASE = 0.12;
+
+            const W3 = Math.sqrt(3);
+            let w, h, dpr, grid;
+            let target = { x: -9999, y: -9999 };
+            let light = { x: -9999, y: -9999 };
+            let hexes = [];
+            let raf = null;
+
+            function hexPath(c, cx, cy) {
+                c.beginPath();
+                for (let i = 0; i < 6; i++) {
+                    const a = Math.PI / 3 * i + Math.PI / 6;
+                    const x = cx + SIZE * Math.cos(a);
+                    const y = cy + SIZE * Math.sin(a);
+                    i ? c.lineTo(x, y) : c.moveTo(x, y);
+                }
+                c.closePath();
+            }
+
+            function build() {
+                dpr = Math.min(window.devicePixelRatio || 1, 2);
+                w = window.innerWidth;
+                h = window.innerHeight;
+                canvas.width = w * dpr;
+                canvas.height = h * dpr;
+                hexes = [];
+                grid = document.createElement('canvas');
+                grid.width = canvas.width;
+                grid.height = canvas.height;
+                const g = grid.getContext('2d');
+                g.scale(dpr, dpr);
+                g.strokeStyle = 'rgba(255,255,255,' + BASE_ALPHA + ')';
+                g.lineWidth = 1;
+                const colW = SIZE * W3, rowH = SIZE * 1.5;
+                for (let r = -1, y = 0; y < h + SIZE; r++, y = r * rowH) {
+                    for (let c = -1; c * colW < w + colW; c++) {
+                        const x = c * colW + (r % 2 ? colW / 2 : 0);
+                        hexPath(g, x, y);
+                        g.stroke();
+                        hexes.push({ x, y });
+                    }
+                }
+                if (reduceMotion) draw();
+            }
+
+            function draw() {
+                ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+                ctx.clearRect(0, 0, w, h);
+                ctx.drawImage(grid, 0, 0, w, h);
+
+                // soft glow under the cursor
+                const grad = ctx.createRadialGradient(light.x, light.y, 0, light.x, light.y, LIGHT_RADIUS);
+                grad.addColorStop(0, 'rgba(' + LIT_RGB + ',0.12)');
+                grad.addColorStop(1, 'rgba(' + LIT_RGB + ',0)');
+                ctx.fillStyle = grad;
+                ctx.fillRect(light.x - LIGHT_RADIUS, light.y - LIGHT_RADIUS, LIGHT_RADIUS * 2, LIGHT_RADIUS * 2);
+
+                // light up hexes near the cursor
+                ctx.lineWidth = 1.2;
+                for (const hx of hexes) {
+                    const d = Math.hypot(hx.x - light.x, hx.y - light.y);
+                    if (d > LIGHT_RADIUS) continue;
+                    const t = 1 - d / LIGHT_RADIUS;
+                    ctx.strokeStyle = 'rgba(' + LIT_RGB + ',' + (t * t * 0.55).toFixed(3) + ')';
+                    hexPath(ctx, hx.x, hx.y);
+                    ctx.stroke();
+                    if (t > 0.6) {
+                        ctx.fillStyle = 'rgba(' + LIT_RGB + ',' + ((t - 0.6) * 0.12).toFixed(3) + ')';
+                        ctx.fill();
+                    }
+                }
+            }
+
+            function tick() {
+                light.x += (target.x - light.x) * EASE;
+                light.y += (target.y - light.y) * EASE;
+                draw();
+                raf = requestAnimationFrame(tick);
+            }
+
+            window.addEventListener('pointermove', e => {
+                if (light.x < -999) { light.x = e.clientX; light.y = e.clientY; }
+                target.x = e.clientX;
+                target.y = e.clientY;
+                if (reduceMotion) { light.x = target.x; light.y = target.y; draw(); }
+            }, { passive: true });
+            window.addEventListener('resize', build);
+
+            // start with the light resting near the top-left hero area
+            target = { x: window.innerWidth * 0.35, y: window.innerHeight * 0.4 };
+            light = { x: target.x, y: target.y };
+            build();
+            if (!reduceMotion) tick(); else draw();
+
+            document.addEventListener('visibilitychange', () => {
+                if (reduceMotion) return;
+                if (document.hidden) { cancelAnimationFrame(raf); raf = null; }
+                else if (!raf) tick();
+            });
+        })();
+
+        // TechText (React Bits) - vanilla JS port, applied to the home section text
+        (function () {
+            const PAD = 40; // canvas bleed so frame, labels and specks aren't clipped
+            const LABEL_FONT = '10px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
+            const FALLOFF_STEPS = 8, SPRING = 320, DAMPING = 22;
+
+            const approach = (c, t, dt, s) => c + (t - c) * (1 - Math.exp(-dt / s));
+            const hexToRgb = hex => {
+                let h = String(hex || '').replace('#', '');
+                if (h.length === 3) h = h.replace(/./g, c => c + c);
+                const n = parseInt(h.slice(0, 6), 16);
+                return Number.isNaN(n) ? [255, 255, 255] : [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+            };
+            const rgba = (hex, a) => { const [r, g, b] = hexToRgb(hex); return `rgba(${r}, ${g}, ${b}, ${a})`; };
+            const noise = (...values) => {
+                let h = 2166136261;
+                for (const v of values) {
+                    h = Math.imul(h ^ (v | 0), 16777619);
+                    h ^= h >>> 13;
+                    h = Math.imul(h, 0x5bd1e995);
+                    h ^= h >>> 15;
+                }
+                return (h >>> 0) / 4294967296;
+            };
+            const signed = v => (v > 0 ? `+${v}` : v < 0 ? `\u2212${-v}` : '0');
+
+            function TechText(el, opts) {
+                const s = Object.assign({
+                    color: '#ffffff', accentColor: '#ffffff', reach: 200, softness: 0.7,
+                    dashLength: 4, dashGap: 2, strokeWidth: 1.5, lineStyle: 'dashed',
+                    reveal: 'letter', specks: 15, selection: true, labels: true,
+                    draggable: true, sweep: true, speed: 1
+                }, opts || {});
+
+                el.classList.add('tech-text');
+                const canvas = document.createElement('canvas');
+                canvas.className = 'tech-text-canvas';
+                canvas.setAttribute('aria-hidden', 'true');
+                el.appendChild(canvas);
+                const ctx = canvas.getContext('2d');
+                const scratch = document.createElement('canvas');
+                const scratchCtx = scratch.getContext('2d');
+                if (!ctx || !scratchCtx) return;
+
+                const reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                let width = 1, height = 1, dpr = 1, raf = 0, last = performance.now();
+                let visible = true, layoutKey = '', requestedFont = '', fontStr = '';
+                let word = null, glyphs = [], presence = 0, clock = 0, pulse = 0, placed = false, dragging = -1;
+                const pointer = { x: 0, y: 0, inside: false };
+                const grab = { x: 0, y: 0 };
+                const lens = { x: 0, y: 0 };
+                const frame = { x1: 0, y1: 0, x2: 0, y2: 0, alpha: 0, index: -1 };
+
+                const refreshFonts = () => { layoutKey = ''; wake(); };
+
+                const sprite = (glyph, stroke, size) => {
+                    const pad = Math.ceil(s.strokeWidth * 2 + 4);
+                    const left = glyph.box.x1 - pad, top = glyph.box.y1 - pad;
+                    const w = glyph.box.x2 - glyph.box.x1 + pad * 2;
+                    const h = glyph.box.y2 - glyph.box.y1 + pad * 2;
+                    const image = document.createElement('canvas');
+                    image.width = Math.max(1, Math.ceil(w * dpr));
+                    image.height = Math.max(1, Math.ceil(h * dpr));
+                    const c = image.getContext('2d');
+                    if (!c) return { image, left, top };
+                    c.setTransform(dpr, 0, 0, dpr, -left * dpr, -top * dpr);
+                    c.font = fontStr;
+                    if ('letterSpacing' in c) c.letterSpacing = '0px';
+                    c.textAlign = 'left';
+                    c.textBaseline = 'alphabetic';
+                    if (stroke) {
+                        c.lineJoin = 'round';
+                        c.lineWidth = s.strokeWidth * 2;
+                        c.lineCap = 'butt';
+                        c.strokeStyle = s.color;
+                        if (s.lineStyle !== 'solid') c.setLineDash([Math.max(1, s.dashLength), Math.max(1, s.dashGap)]);
+                        c.strokeText(glyph.char, glyph.x, glyph.baseline);
+                        c.setLineDash([]);
+                        c.globalCompositeOperation = 'destination-out';
+                        c.fillStyle = '#000';
+                        c.fillText(glyph.char, glyph.x, glyph.baseline);
+                        c.globalCompositeOperation = 'source-over';
+                    } else {
+                        c.fillStyle = s.color;
+                        c.fillText(glyph.char, glyph.x, glyph.baseline);
+                    }
+                    return { image, left, top };
+                };
+
+                // Glyph positions come from the real DOM layout, so size/position/alignment/wrapping stay untouched.
+                const ensureLayout = () => {
+                    const cs = getComputedStyle(el);
+                    const size = parseFloat(cs.fontSize);
+                    const key = [el.textContent, size, cs.fontWeight, cs.fontFamily, cs.textTransform, el.offsetWidth, el.offsetHeight, dpr].join('|');
+                    if (key === layoutKey && word) return word;
+                    layoutKey = key;
+                    fontStr = `${cs.fontWeight} ${size}px ${cs.fontFamily}`;
+                    if (document.fonts && fontStr !== requestedFont) {
+                        requestedFont = fontStr;
+                        document.fonts.load(fontStr, el.textContent).then(refreshFonts, refreshFonts);
+                    }
+                    const probe = scratchCtx;
+                    probe.setTransform(1, 0, 0, 1, 0, 0);
+                    probe.font = fontStr;
+                    if ('letterSpacing' in probe) probe.letterSpacing = '0px';
+                    const fa = probe.measureText('M').fontBoundingBoxAscent || size * 0.8;
+
+                    const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+                    const node = walker.nextNode();
+                    if (!node) { glyphs = []; word = { left: 0, right: 1, top: 0, bottom: 1 }; return word; }
+                    const upper = cs.textTransform === 'uppercase';
+                    const elRect = el.getBoundingClientRect();
+                    const range = document.createRange();
+                    const previous = glyphs;
+                    glyphs = [];
+                    const data = node.data;
+                    for (let i = 0; i < data.length; i++) {
+                        if (!data[i].trim()) continue;
+                        range.setStart(node, i);
+                        range.setEnd(node, i + 1);
+                        const r = range.getBoundingClientRect();
+                        const char = upper ? data[i].toUpperCase() : data[i];
+                        const gx = r.left - elRect.left + PAD;
+                        const baseline = r.top - elRect.top + PAD + fa;
+                        const own = probe.measureText(char);
+                        const base = {
+                            char, x: gx, baseline,
+                            box: {
+                                x1: gx - own.actualBoundingBoxLeft,
+                                y1: baseline - own.actualBoundingBoxAscent,
+                                x2: gx + own.actualBoundingBoxRight,
+                                y2: baseline + own.actualBoundingBoxDescent
+                            }
+                        };
+                        const kept = previous[glyphs.length];
+                        glyphs.push(Object.assign({}, base, {
+                            offset: kept && kept.char === char ? kept.offset : { x: 0, y: 0 },
+                            velocity: { x: 0, y: 0 },
+                            outline: 0,
+                            index: i,
+                            fill: sprite(base, false, size),
+                            dashes: sprite(base, true, size)
+                        }));
+                    }
+                    word = {
+                        left: Math.min(...glyphs.map(g => g.box.x1)),
+                        right: Math.max(...glyphs.map(g => g.box.x2)),
+                        top: Math.min(...glyphs.map(g => g.box.y1)),
+                        bottom: Math.max(...glyphs.map(g => g.box.y2))
+                    };
+                    if (!glyphs.length) word = { left: 0, right: 1, top: 0, bottom: 1 };
+                    dragging = -1;
+                    frame.index = -1;
+                    return word;
+                };
+
+                const glyphAt = (x, y) => {
+                    if (!word || y < word.top - 24 || y > word.bottom + 24) return -1;
+                    let best = -1, bestD = Infinity;
+                    glyphs.forEach((g, i) => {
+                        if (y < g.box.y1 - 24 || y > g.box.y2 + 24) return;
+                        const x1 = g.box.x1 + g.offset.x, x2 = g.box.x2 + g.offset.x;
+                        const d = x < x1 ? x1 - x : x > x2 ? x - x2 : 0;
+                        if (d < bestD) { bestD = d; best = i; }
+                    });
+                    return bestD < 28 ? best : -1;
+                };
+
+                const falloff = (target, cx, cy, radius, strength, softness) => {
+                    const inner = Math.min(1, Math.max(0, 1 - softness));
+                    const g = target.createRadialGradient(cx, cy, 0, cx, cy, radius);
+                    g.addColorStop(0, `rgba(0, 0, 0, ${strength})`);
+                    if (inner > 0.995) {
+                        g.addColorStop(0.995, `rgba(0, 0, 0, ${strength})`);
+                        g.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                        return g;
+                    }
+                    for (let i = 0; i <= FALLOFF_STEPS; i++) {
+                        const t = i / FALLOFF_STEPS;
+                        const eased = t * t * (3 - 2 * t);
+                        g.addColorStop(inner + (1 - inner) * t, `rgba(0, 0, 0, ${strength * (1 - eased)})`);
+                    }
+                    return g;
+                };
+
+                const blit = (target, art, dx, dy, ox, oy) => {
+                    target.drawImage(art.image, Math.round((art.left + dx) * dpr - ox), Math.round((art.top + dy) * dpr - oy));
+                };
+
+                const drawReveal = () => {
+                    const radius = s.reach * dpr, cx = lens.x * dpr, cy = lens.y * dpr;
+                    ctx.globalCompositeOperation = 'destination-out';
+                    ctx.fillStyle = falloff(ctx, cx, cy, radius, presence, s.softness);
+                    ctx.fillRect(cx - radius, cy - radius, radius * 2, radius * 2);
+                    ctx.globalCompositeOperation = 'source-over';
+                    const x0 = Math.max(0, Math.floor(cx - radius)), y0 = Math.max(0, Math.floor(cy - radius));
+                    const x1 = Math.min(canvas.width, Math.ceil(cx + radius)), y1 = Math.min(canvas.height, Math.ceil(cy + radius));
+                    if (x1 <= x0 || y1 <= y0) return;
+                    const w = x1 - x0, h = y1 - y0;
+                    if (scratch.width < w || scratch.height < h) {
+                        scratch.width = Math.max(scratch.width, w);
+                        scratch.height = Math.max(scratch.height, h);
+                    }
+                    scratchCtx.setTransform(1, 0, 0, 1, 0, 0);
+                    scratchCtx.globalCompositeOperation = 'source-over';
+                    scratchCtx.clearRect(0, 0, w, h);
+                    for (const g of glyphs) blit(scratchCtx, g.dashes, g.offset.x, g.offset.y, x0, y0);
+                    scratchCtx.globalCompositeOperation = 'destination-in';
+                    scratchCtx.fillStyle = falloff(scratchCtx, cx - x0, cy - y0, radius, 1, s.softness);
+                    scratchCtx.fillRect(0, 0, w, h);
+                    scratchCtx.globalCompositeOperation = 'source-over';
+                    ctx.globalAlpha = presence;
+                    ctx.drawImage(scratch, 0, 0, w, h, x0, y0, w, h);
+                    ctx.globalAlpha = 1;
+                };
+
+                const crisp = v => (Math.round(v * dpr) + 0.5) / dpr;
+
+                const perimeterPoint = (distance, w, h) => {
+                    const total = 2 * (w + h);
+                    let d = ((distance % total) + total) % total;
+                    if (d < w) return [frame.x1 + d, frame.y1, 0, -1];
+                    d -= w;
+                    if (d < h) return [frame.x2, frame.y1 + d, 1, 0];
+                    d -= h;
+                    if (d < w) return [frame.x2 - d, frame.y2, 0, 1];
+                    d -= w;
+                    return [frame.x1, frame.y2 - d, -1, 0];
+                };
+
+                const drawSpecks = a => {
+                    const w = frame.x2 - frame.x1, h = frame.y2 - frame.y1;
+                    if (w < 2 || h < 2) return;
+                    const perimeter = 2 * (w + h), seed = frame.index + 1, grid = 3;
+                    for (let k = 0; k < s.specks; k++) {
+                        const period = 0.5 + noise(seed, k, 11) * 1.2;
+                        const t = pulse / period + noise(seed, k, 17);
+                        const cycle = Math.floor(t), life = t - cycle;
+                        if (life > 0.7) continue;
+                        const [px, py, nx, ny] = perimeterPoint(noise(seed, k, cycle) * perimeter, w, h);
+                        const pick = noise(seed, k, cycle, 2);
+                        const size = pick < 0.46 ? 2 : pick < 0.7 ? 3 : pick < 0.84 ? 5 : pick < 0.94 ? 8 : 11;
+                        const large = size >= 8;
+                        const out = (large ? 9 : 4) + Math.floor(noise(seed, k, cycle, 1) * 5) * grid;
+                        const x = frame.x1 + Math.round((px + nx * out - frame.x1) / grid) * grid;
+                        const y = frame.y1 + Math.round((py + ny * out - frame.y1) / grid) * grid;
+                        const tone = noise(seed, k, cycle, 3);
+                        const blink = life < 0.06 || (life > 0.32 && life < 0.36) ? 0.35 : 1;
+                        const alpha = a * (large ? 0.3 + 0.4 * tone : 0.3 + 0.6 * tone) * blink;
+                        const left = Math.round(x - size / 2), top = Math.round(y - size / 2);
+                        if (tone < 0.26 || (large && tone < 0.78)) {
+                            ctx.strokeStyle = rgba(s.accentColor, alpha);
+                            ctx.strokeRect(left + 0.5, top + 0.5, size, size);
+                            if (large && tone > 0.5) {
+                                ctx.fillStyle = rgba(s.accentColor, alpha);
+                                ctx.fillRect(Math.round(x) - 1, Math.round(y) - 1, 2, 2);
+                            }
+                        } else {
+                            ctx.fillStyle = rgba(s.accentColor, alpha);
+                            ctx.fillRect(left, top, size, size);
+                        }
+                    }
+                    for (let j = 0; j < 2; j++) {
+                        const head = (pulse * 0.42 * s.speed + j * 0.5) * perimeter;
+                        for (let i = 0; i < 4; i++) {
+                            const [x, y] = perimeterPoint(head - i * 6, w, h);
+                            const size = i === 0 ? 3 : 2;
+                            ctx.fillStyle = rgba(s.accentColor, a * [0.95, 0.55, 0.32, 0.16][i]);
+                            ctx.fillRect(Math.round(x - size / 2), Math.round(y - size / 2), size, size);
+                        }
+                    }
+                };
+
+                const drawFrame = () => {
+                    const glyph = glyphs[frame.index];
+                    if (!glyph || frame.alpha < 0.01) return;
+                    const a = frame.alpha;
+                    const x1 = crisp(frame.x1), y1 = crisp(frame.y1), x2 = crisp(frame.x2), y2 = crisp(frame.y2);
+                    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+                    const moved = Math.hypot(glyph.offset.x, glyph.offset.y);
+                    if (moved > 1) {
+                        const hx = (glyph.box.x1 + glyph.box.x2) / 2, hy = (glyph.box.y1 + glyph.box.y2) / 2;
+                        ctx.beginPath();
+                        ctx.moveTo(hx, hy);
+                        ctx.lineTo(hx + glyph.offset.x, hy + glyph.offset.y);
+                        ctx.setLineDash([3, 4]);
+                        ctx.lineWidth = 1;
+                        ctx.strokeStyle = rgba(s.accentColor, 0.45 * a);
+                        ctx.stroke();
+                        ctx.setLineDash([]);
+                        ctx.beginPath();
+                        ctx.rect(Math.round(hx) - 2, Math.round(hy) - 2, 4, 4);
+                        ctx.fillStyle = rgba(s.accentColor, 0.7 * a);
+                        ctx.fill();
+                    }
+                    ctx.beginPath();
+                    ctx.rect(x1, y1, x2 - x1, y2 - y1);
+                    ctx.lineWidth = 1;
+                    ctx.strokeStyle = rgba(s.accentColor, 0.5 * a);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    for (const [cx, cy] of [[x1, y1], [x2, y1], [x2, y2], [x1, y2]]) ctx.rect(Math.round(cx) - 2, Math.round(cy) - 2, 5, 5);
+                    ctx.fillStyle = rgba(s.accentColor, 0.95 * a);
+                    ctx.fill();
+                    if (s.specks > 0) { ctx.lineWidth = 1; drawSpecks(a); }
+                    if (!s.labels) return;
+                    ctx.font = LABEL_FONT;
+                    ctx.textAlign = 'left';
+                    ctx.textBaseline = 'bottom';
+                    ctx.fillStyle = rgba(s.accentColor, 0.62 * a);
+                    const label = moved > 1
+                        ? `${signed(Math.round(glyph.offset.x))}, ${signed(Math.round(-glyph.offset.y))}`
+                        : `${glyph.char}  ${Math.round(glyph.box.x2 - glyph.box.x1)} \u00d7 ${Math.round(glyph.box.y2 - glyph.box.y1)}`;
+                    ctx.fillText(label, Math.round(frame.x1), Math.round(frame.y1) - 7);
+                };
+
+                const tick = now => {
+                    raf = 0;
+                    const dt = Math.min(0.05, Math.max(0.001, (now - last) / 1000));
+                    last = now;
+                    const view = ensureLayout();
+
+                    const sweeping = s.sweep && !reducedMotion && !pointer.inside && dragging < 0;
+                    if (sweeping) clock += dt * s.speed;
+                    pulse += dt;
+                    let tx = pointer.x, ty = pointer.y;
+                    if (sweeping) {
+                        tx = view.left + (view.right - view.left) * (0.5 - 0.5 * Math.cos(clock * 0.45));
+                        ty = view.top + (view.bottom - view.top) * (0.45 + 0.1 * Math.sin(clock * 0.8));
+                    }
+                    const active = pointer.inside || sweeping || dragging >= 0;
+                    if (active && !placed) { lens.x = tx; lens.y = ty; }
+                    if (active) {
+                        const lag = pointer.inside ? 0.05 : 0.22;
+                        lens.x = approach(lens.x, tx, dt, lag);
+                        lens.y = approach(lens.y, ty, dt, lag);
+                    }
+                    placed = active;
+                    presence = approach(presence, s.reveal === 'area' && active && dragging < 0 ? 1 : 0, dt, 0.16);
+
+                    let moving = false;
+                    glyphs.forEach((g, i) => {
+                        if (i === dragging) {
+                            g.offset.x = approach(g.offset.x, pointer.x - grab.x, dt, 0.03);
+                            g.offset.y = approach(g.offset.y, pointer.y - grab.y, dt, 0.03);
+                            g.velocity.x = 0; g.velocity.y = 0;
+                            moving = true;
+                            return;
+                        }
+                        const { offset, velocity } = g;
+                        if (Math.abs(offset.x) < 0.05 && Math.abs(offset.y) < 0.05 && Math.hypot(velocity.x, velocity.y) < 0.5) {
+                            offset.x = 0; offset.y = 0; velocity.x = 0; velocity.y = 0;
+                            return;
+                        }
+                        velocity.x += (-SPRING * offset.x - DAMPING * velocity.x) * dt;
+                        velocity.y += (-SPRING * offset.y - DAMPING * velocity.y) * dt;
+                        offset.x += velocity.x * dt;
+                        offset.y += velocity.y * dt;
+                        moving = true;
+                    });
+
+                    const focus = dragging >= 0 ? dragging : active ? glyphAt(lens.x, lens.y) : -1;
+                    if (focus >= 0 && s.selection) {
+                        const g = glyphs[focus];
+                        const bx1 = g.box.x1 + g.offset.x - 6, by1 = g.box.y1 + g.offset.y - 6;
+                        const bx2 = g.box.x2 + g.offset.x + 6, by2 = g.box.y2 + g.offset.y + 6;
+                        if (frame.index < 0 || frame.alpha < 0.02) { frame.x1 = bx1; frame.y1 = by1; frame.x2 = bx2; frame.y2 = by2; }
+                        const glide = focus === dragging ? 0.02 : 0.08;
+                        frame.x1 = approach(frame.x1, bx1, dt, glide);
+                        frame.y1 = approach(frame.y1, by1, dt, glide);
+                        frame.x2 = approach(frame.x2, bx2, dt, glide);
+                        frame.y2 = approach(frame.y2, by2, dt, glide);
+                        frame.index = focus;
+                    }
+                    frame.alpha = approach(frame.alpha, focus >= 0 && s.selection ? 1 : 0, dt, 0.1);
+
+                    glyphs.forEach((g, i) => {
+                        const target = s.reveal === 'letter' && i === focus && i !== dragging ? 1 : 0;
+                        g.outline = approach(g.outline, target, dt, 0.09);
+                        if (Math.abs(g.outline - target) > 0.002) moving = true; else g.outline = target;
+                    });
+
+                    if (s.draggable) el.style.cursor = dragging >= 0 ? 'grabbing' : focus >= 0 && pointer.inside ? 'grab' : '';
+
+                    ctx.setTransform(1, 0, 0, 1, 0, 0);
+                    ctx.globalCompositeOperation = 'source-over';
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    for (const g of glyphs) {
+                        const moved = Math.hypot(g.offset.x, g.offset.y);
+                        if (moved > 1) {
+                            ctx.globalAlpha = Math.min(1, moved / 24) * 0.55;
+                            blit(ctx, g.dashes, 0, 0, 0, 0);
+                            ctx.globalAlpha = 1;
+                        }
+                    }
+                    for (const g of glyphs) {
+                        if (g.outline < 0.999) { ctx.globalAlpha = 1 - g.outline; blit(ctx, g.fill, g.offset.x, g.offset.y, 0, 0); }
+                        if (g.outline > 0.001) { ctx.globalAlpha = g.outline; blit(ctx, g.dashes, g.offset.x, g.offset.y, 0, 0); }
+                        ctx.globalAlpha = 1;
+                    }
+                    if (presence > 0.001) drawReveal();
+                    drawFrame();
+
+                    const settling = moving ||
+                        Math.abs(presence - (s.reveal === 'area' && active && dragging < 0 ? 1 : 0)) > 0.002 ||
+                        (frame.alpha > 0.01 && frame.alpha < 0.99);
+                    if ((active || settling) && visible) raf = requestAnimationFrame(tick);
+                };
+
+                function wake() {
+                    if (raf || !visible) return;
+                    last = performance.now();
+                    raf = requestAnimationFrame(tick);
+                }
+
+                const resize = () => {
+                    width = Math.max(1, el.offsetWidth + PAD * 2);
+                    height = Math.max(1, el.offsetHeight + PAD * 2);
+                    dpr = Math.min(window.devicePixelRatio || 1, 2);
+                    canvas.width = Math.round(width * dpr);
+                    canvas.height = Math.round(height * dpr);
+                    canvas.style.width = width + 'px';
+                    canvas.style.height = height + 'px';
+                    canvas.style.left = -PAD + 'px';
+                    canvas.style.top = -PAD + 'px';
+                    layoutKey = '';
+                    wake();
+                };
+
+                const locate = e => {
+                    const rect = el.getBoundingClientRect();
+                    pointer.x = e.clientX - rect.left + PAD;
+                    pointer.y = e.clientY - rect.top + PAD;
+                };
+                const onMove = e => { locate(e); pointer.inside = true; wake(); };
+                const onLeave = () => { if (dragging >= 0) return; pointer.inside = false; wake(); };
+                const onDown = e => {
+                    locate(e);
+                    pointer.inside = true;
+                    if (s.draggable && (e.pointerType !== 'mouse' || e.button === 0)) {
+                        const index = glyphAt(pointer.x, pointer.y);
+                        if (index >= 0) {
+                            dragging = index;
+                            grab.x = pointer.x - glyphs[index].offset.x;
+                            grab.y = pointer.y - glyphs[index].offset.y;
+                            if (el.setPointerCapture) el.setPointerCapture(e.pointerId);
+                        }
+                    }
+                    wake();
+                };
+                const onUp = e => {
+                    if (dragging >= 0) {
+                        dragging = -1;
+                        if (el.releasePointerCapture) el.releasePointerCapture(e.pointerId);
+                        const rect = el.getBoundingClientRect();
+                        pointer.inside = e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom;
+                    }
+                    wake();
+                };
+
+                el.addEventListener('pointermove', onMove, { passive: true });
+                el.addEventListener('pointerenter', onMove, { passive: true });
+                el.addEventListener('pointerdown', onDown, { passive: true });
+                el.addEventListener('pointerup', onUp, { passive: true });
+                el.addEventListener('pointercancel', onUp, { passive: true });
+                el.addEventListener('pointerleave', onLeave, { passive: true });
+
+                new ResizeObserver(resize).observe(el);
+                new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; wake(); }).observe(el);
+                if (document.fonts) document.fonts.ready.then(refreshFonts, refreshFonts);
+                resize();
+            }
+
+            // Home section: same elements, same size/position/alignment - only the effect is added.
+            const big = { reach: 200, strokeWidth: 1.5, dashLength: 4, dashGap: 2, specks: 15 };
+            const small = { reach: 120, strokeWidth: 1, dashLength: 3, dashGap: 2, specks: 8 };
+            document.querySelectorAll('#home .home-content > h1').forEach(el => TechText(el, big));
+            document.querySelectorAll('#home .home-content > p').forEach(el => TechText(el, small));
+        })();
+
+
+        // TargetCursor (React Bits): vanilla JS port of the React component.
+        // Brackets roam with the mouse and lock onto links, buttons, inputs and any .cursor-target element.
+        (function () {
+            const options = {
+                targetSelector: 'a[href], button, input, textarea, .menu-icon, .cursor-target',
+                cursorColor: '#ffffff',
+                cursorColorOnTarget: undefined,
+                spinDuration: 2,
+                hoverDuration: 0.2,
+                parallaxOn: true,
+                hideDefaultCursor: true,
+                size: 36,
+                cornerSize: 12,
+                thickness: 3,
+                padding: 6,
+                matchRadius: true,
+                dotSize: 4,
+                blendMode: 'difference',
+                showLabel: true,
+                clickEffect: true,
+                container: null // pass an element to limit the cursor to it
+            };
+
+            const CORNER_ANGLES = [0, 90, 180, 270];
+            const QUARTER = Math.PI / 2;
+            const s = Object.assign({}, options);
+            s.hoverDuration = Math.max(0.05, s.hoverDuration);
+            s.size = Math.max(4, s.size);
+            s.cornerSize = Math.max(2, s.cornerSize);
+            s.thickness = Math.max(0.5, s.thickness);
+            s.dotSize = Math.max(0, s.dotSize);
+
+            const spring = (state, goal, stiffness, damping, dt) => {
+                const steps = 2;
+                const h = dt / steps;
+                for (let i = 0; i < steps; i++) {
+                    state.v += (stiffness * (goal - state.x) - damping * state.v) * h;
+                    state.x += state.v * h;
+                }
+            };
+
+            const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
+            let destroy = null;
+
+            function mount() {
+                const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+                const root = document.createElement('div');
+                root.className = 'target-cursor';
+                root.setAttribute('aria-hidden', 'true');
+                root.style.mixBlendMode = s.blendMode;
+                root.style.opacity = '0';
+                const corners = CORNER_ANGLES.map(() => {
+                    const c = document.createElement('span');
+                    c.className = 'target-cursor__corner';
+                    root.appendChild(c);
+                    return c;
+                });
+                const dot = document.createElement('span');
+                dot.className = 'target-cursor__dot';
+                const label = document.createElement('span');
+                label.className = 'target-cursor__label';
+                root.appendChild(dot);
+                root.appendChild(label);
+                document.body.appendChild(root);
+
+                const style = document.createElement('style');
+                document.head.appendChild(style);
+
+                const pointer = { x: 0, y: 0, inside: false, seen: false, pressed: false };
+                const centerX = { x: 0, v: 0 };
+                const centerY = { x: 0, v: 0 };
+                const halfW = { x: 0, v: 0 };
+                const halfH = { x: 0, v: 0 };
+                const radius = { x: 0, v: 0 };
+                const turn = { x: 0, v: 0 };
+                const lock = { x: 0, v: 0 };
+                const press = { x: 0, v: 0 };
+                const presence = { x: 0, v: 0 };
+                let target = null;
+                let targetRadius = 0;
+                let quarter = 0;
+                let spinSpeed = 0;
+                let raf = 0;
+                let last = 0;
+                let lastLabel = '';
+                let lastColor = '';
+
+                const scope = s.container || null;
+                if (scope) scope.setAttribute('data-target-cursor-scope', '');
+
+                const hideCursor = () => {
+                    const selector = scope ? '[data-target-cursor-scope]' : 'html';
+                    const rule = s.hideDefaultCursor && pointer.inside
+                        ? `${selector}, ${selector} * { cursor: none !important; }` : '';
+                    if (style.textContent !== rule) style.textContent = rule;
+                };
+
+                const findTarget = (x, y, element) => {
+                    const node = element || document.elementFromPoint(x, y);
+                    const found = (node && node.closest && node.closest(s.targetSelector)) || null;
+                    if (found && scope && !scope.contains(found)) return null;
+                    return found;
+                };
+
+                const lockOn = next => {
+                    if (next === target) return;
+                    target = next;
+                    if (target) {
+                        quarter = Math.round(turn.x / QUARTER);
+                        targetRadius = parseFloat(getComputedStyle(target).borderTopLeftRadius) || 0;
+                        spinSpeed = 0;
+                    }
+                };
+
+                const frame = now => {
+                    raf = 0;
+                    const dt = last ? Math.min(0.05, (now - last) / 1000) : 1 / 60;
+                    last = now;
+
+                    if (target && !target.isConnected) lockOn(null);
+                    const rect = target ? target.getBoundingClientRect() : null;
+                    const locked = !!rect && pointer.inside;
+                    const snapW = 4.6 / s.hoverDuration;
+                    const snapK = snapW * snapW;
+                    const snapC = 2 * 0.62 * snapW;
+
+                    spring(presence, pointer.inside ? 1 : 0, 260, 32, dt);
+                    spring(lock, locked ? 1 : 0, snapK, 2 * snapW, dt);
+                    spring(press, pointer.pressed && s.clickEffect ? 1 : 0, 900, 40, dt);
+
+                    let goalX = pointer.x;
+                    let goalY = pointer.y;
+                    let goalW = s.size / 2;
+                    let goalH = s.size / 2;
+                    let goalR = Math.min(2, s.cornerSize / 4);
+                    if (locked) {
+                        const cx = rect.left + rect.width / 2;
+                        const cy = rect.top + rect.height / 2;
+                        const lean = s.parallaxOn ? 0.08 : 0;
+                        goalX = cx + (pointer.x - cx) * lean;
+                        goalY = cy + (pointer.y - cy) * lean;
+                        const odd = Math.abs(quarter) % 2 === 1;
+                        const w = rect.width / 2 + s.padding;
+                        const h = rect.height / 2 + s.padding;
+                        goalW = odd ? h : w;
+                        goalH = odd ? w : h;
+                        goalR = s.matchRadius ? Math.min(targetRadius + Math.max(0, s.padding), s.cornerSize) : 0;
+                    }
+
+                    if (!pointer.inside && presence.x < 0.01) pointer.seen = false;
+                    if (!pointer.seen) {
+                        centerX.x = goalX;
+                        centerY.x = goalY;
+                        halfW.x = goalW;
+                        halfH.x = goalH;
+                        pointer.seen = pointer.inside;
+                    }
+
+                    const follow = locked ? snapK : 2200;
+                    const followC = locked ? snapC : 2 * Math.sqrt(2200);
+                    spring(centerX, goalX, follow, followC, dt);
+                    spring(centerY, goalY, follow, followC, dt);
+                    spring(halfW, goalW, snapK, snapC, dt);
+                    spring(halfH, goalH, snapK, snapC, dt);
+                    spring(radius, goalR, snapK, 2 * snapW, dt);
+
+                    if (locked) {
+                        spring(turn, quarter * QUARTER, snapK, snapC, dt);
+                    } else {
+                        const speed = s.spinDuration > 0 && !reduce ? (Math.PI * 2) / s.spinDuration : 0;
+                        spinSpeed += (speed - spinSpeed) * (1 - Math.exp(-dt * 3));
+                        turn.v = spinSpeed;
+                        turn.x += spinSpeed * dt;
+                    }
+
+                    const squeeze = 1 - press.x * 0.14;
+                    const cos = Math.cos(turn.x);
+                    const sin = Math.sin(turn.x);
+                    const w = Math.max(0, halfW.x) * squeeze;
+                    const h = Math.max(0, halfH.x) * squeeze;
+                    const local = [[-w, -h], [w, -h], [w, h], [-w, h]];
+                    const r = Math.max(0, Math.min(radius.x, s.cornerSize));
+                    const degrees = (turn.x * 180) / Math.PI;
+                    let left = Infinity;
+                    let top = Infinity;
+                    corners.forEach((corner, i) => {
+                        const lx = local[i][0], ly = local[i][1];
+                        const x = centerX.x + lx * cos - ly * sin;
+                        const y = centerY.x + lx * sin + ly * cos;
+                        left = Math.min(left, x);
+                        top = Math.min(top, y);
+                        corner.style.transform = `translate3d(${x.toFixed(2)}px, ${y.toFixed(2)}px, 0) rotate(${(CORNER_ANGLES[i] + degrees).toFixed(2)}deg)`;
+                        corner.style.width = `${s.cornerSize}px`;
+                        corner.style.height = `${s.cornerSize}px`;
+                        corner.style.borderWidth = `${s.thickness}px 0 0 ${s.thickness}px`;
+                        corner.style.borderTopLeftRadius = `${r.toFixed(2)}px`;
+                    });
+
+                    const dotScale = 1 - press.x * 0.35;
+                    dot.style.transform = `translate3d(${pointer.x}px, ${pointer.y}px, 0) translate(-50%, -50%) scale(${dotScale.toFixed(3)})`;
+                    dot.style.width = `${s.dotSize}px`;
+                    dot.style.height = `${s.dotSize}px`;
+
+                    const text = s.showLabel && target ? target.getAttribute('data-cursor-label') || '' : '';
+                    if (text && text !== lastLabel) label.textContent = text;
+                    if (text) lastLabel = text;
+                    const shown = text ? Math.max(0, Math.min(1, lock.x)) : 0;
+                    label.style.transform = `translate3d(${left.toFixed(2)}px, ${(top - 8).toFixed(2)}px, 0) translateY(-100%) translateY(${((1 - shown) * 4).toFixed(2)}px)`;
+                    label.style.opacity = shown.toFixed(3);
+
+                    const mix = s.cursorColorOnTarget ? Math.round(Math.max(0, Math.min(1, lock.x)) * 100) : 0;
+                    const color = mix ? `color-mix(in oklab, ${s.cursorColorOnTarget} ${mix}%, ${s.cursorColor})` : s.cursorColor;
+                    if (color !== lastColor) {
+                        root.style.setProperty('--target-cursor-color', color);
+                        lastColor = color;
+                    }
+                    root.style.opacity = Math.max(0, Math.min(1, presence.x)).toFixed(3);
+
+                    const resting = !pointer.inside && presence.x < 0.002 && Math.abs(presence.v) < 0.002 &&
+                        Math.abs(lock.x) < 0.002 && Math.abs(press.x) < 0.002;
+                    const spinning = pointer.inside && !locked && spinSpeed > 0.0001;
+                    const moving =
+                        Math.abs(centerX.v) + Math.abs(centerY.v) + Math.abs(halfW.v) + Math.abs(halfH.v) + Math.abs(turn.v) > 0.01 ||
+                        Math.abs(goalX - centerX.x) + Math.abs(goalY - centerY.x) > 0.05 ||
+                        Math.abs(lock.v) + Math.abs(press.v) + Math.abs(presence.v) > 0.001;
+                    if (!resting && (spinning || moving || locked)) raf = requestAnimationFrame(frame);
+                    else last = 0;
+                };
+
+                const wake = () => { if (!raf) raf = requestAnimationFrame(frame); };
+
+                const insideScope = (x, y, element) => {
+                    if (!scope) return true;
+                    if (element && scope.contains(element)) return true;
+                    const box = scope.getBoundingClientRect();
+                    return x >= box.left && x <= box.right && y >= box.top && y <= box.bottom;
+                };
+
+                const onPointerMove = event => {
+                    if (event.pointerType && event.pointerType !== 'mouse') return;
+                    pointer.x = event.clientX;
+                    pointer.y = event.clientY;
+                    const inside = insideScope(pointer.x, pointer.y, event.target);
+                    if (inside !== pointer.inside) {
+                        pointer.inside = inside;
+                        hideCursor();
+                    }
+                    lockOn(inside ? findTarget(pointer.x, pointer.y, event.target) : null);
+                    wake();
+                };
+                const onPointerDown = event => {
+                    if (event.pointerType && event.pointerType !== 'mouse') return;
+                    pointer.pressed = true;
+                    wake();
+                };
+                const onPointerUp = () => { pointer.pressed = false; wake(); };
+                const onLeave = () => {
+                    pointer.inside = false;
+                    pointer.pressed = false;
+                    lockOn(null);
+                    hideCursor();
+                    wake();
+                };
+                const onScroll = () => {
+                    if (!pointer.inside) return;
+                    lockOn(findTarget(pointer.x, pointer.y));
+                    wake();
+                };
+
+                window.addEventListener('pointermove', onPointerMove, { passive: true });
+                window.addEventListener('pointerdown', onPointerDown, { passive: true });
+                window.addEventListener('pointerup', onPointerUp, { passive: true });
+                window.addEventListener('scroll', onScroll, { passive: true, capture: true });
+                document.documentElement.addEventListener('pointerleave', onLeave);
+                window.addEventListener('blur', onLeave);
+
+                return function () {
+                    cancelAnimationFrame(raf);
+                    window.removeEventListener('pointermove', onPointerMove);
+                    window.removeEventListener('pointerdown', onPointerDown);
+                    window.removeEventListener('pointerup', onPointerUp);
+                    window.removeEventListener('scroll', onScroll, { capture: true });
+                    document.documentElement.removeEventListener('pointerleave', onLeave);
+                    window.removeEventListener('blur', onLeave);
+                    if (scope) scope.removeAttribute('data-target-cursor-scope');
+                    style.remove();
+                    root.remove();
+                };
+            }
+
+            // Only on devices with a real mouse; follows the device if the pointer type changes
+            const update = () => {
+                if (finePointer.matches && !destroy) destroy = mount();
+                else if (!finePointer.matches && destroy) { destroy(); destroy = null; }
+            };
+            update();
+            finePointer.addEventListener('change', update);
+        })();
+
     </script>
 
 </body>
